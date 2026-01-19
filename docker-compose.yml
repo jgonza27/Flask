@@ -1,13 +1,11 @@
 version: '3.8'
 
 services:
-  phpliteadmin:
-    image:  acttaiwan/phpliteadmin
-    container_name: phpliteadmin
+  adminer:
+    image: adminer:latest
+    container_name:  adminer
     restart: always
     ports:
-      - "8080:80"
+      - "8080:8080"
     volumes:
-      - ./dbase.db:/var/www/html/dbase.db
-    environment:
-      - SQLITE_DATABASE=dbase.db
+      - . :/var/www/html
