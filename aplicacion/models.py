@@ -1,3 +1,10 @@
+from sqlalchemy import Column, ForeignKey, Integer, String, Float
+from sqlalchemy.orm import relationship
+from flask_sqlalchemy import SQLAlchemy
+
+db = SQLAlchemy()
+
+
 class Categorias(db.Model):
     """Categorías de los artículos"""
     __tablename__ = 'categorias'
@@ -7,7 +14,7 @@ class Categorias(db.Model):
     articulos = relationship(
         "Articulos",
         cascade="all, delete-orphan",
-        backref="categoria_ref",  
+        back_populates="categoria",
         lazy='dynamic'
     )
 
@@ -27,10 +34,10 @@ class Articulos(db.Model):
     image = Column(String(255))
     stock = Column(Integer, default=0)
     CategoriaId = Column(Integer, ForeignKey('categorias.id'), nullable=False)
-    
+    categoria = relationship("Categorias", back_populates="articulos")
 
     def precio_final(self):
-        return self.precio + (self.precio * self. iva / 100)
+        return self. precio + (self.precio * self.iva / 100)
 
     def __repr__(self):
         return f'<Articulos: {self.id}>'
