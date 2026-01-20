@@ -7,16 +7,18 @@
             <h3>Categorias...</h3>
             <div class="list-group">
                 {% for cat in categorias %}
-                {% if categoria.nombre==cat.nombre%}
+                {# Comprobamos si 'categoria' existe antes de acceder a 'categoria.nombre' #}
+                {% if categoria and categoria.nombre == cat.nombre %}
                 <a class="list-group-item active" href="{{url_for('inicio', id=cat.id)}}">{{cat.nombre}}</a>
                 {% else %}
                 <a class="list-group-item" href="{{url_for('inicio', id=cat.id)}}">{{cat.nombre}}</a>
-                {% endif%}
+                {% endif %}
                 {% endfor %}
             </div>
         </div>
         <div class="col-md-10">
-            <h3>Nuestros videojuegos... ({{categoria.nombre}})</h3>
+            {# Mostramos el nombre de la categoría o 'Todos' si es la página de inicio #}
+            <h3>Nuestros videojuegos... ({{ categoria.nombre if categoria else 'Todos' }})</h3>
             <div class="panel panel-default">
                 <table class="table table-bordered">
                     <tr>
@@ -28,10 +30,11 @@
                     </tr>
                     {% for art in articulos %}<tr>
                         {% if art.image %}
-                        <td><img src="{{url_for('static',filename='img/')}}{{art.image}}" />
-                            {% else %}
-                        <td><img src="{{url_for('static',filename='img/not-found.png')}}" />
-                            {% endif %}
+                        {# Asegúrate de que la ruta a static/img/ sea correcta #}
+                        <td><img src="{{url_for('static',filename='img/')}}{{art.image}}" width="100" /></td>
+                        {% else %}
+                        <td><img src="{{url_for('static',filename='img/not-found.png')}}" width="100" /></td>
+                        {% endif %}
                         <td>{{art.nombre}}</td>
                         <td>{{art.descripcion}}</td>
                         <td>{{art.precio_final()}}</td>

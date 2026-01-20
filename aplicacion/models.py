@@ -4,7 +4,6 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
-
 class Categorias(db.Model):
     """Categorías de los artículos"""
     __tablename__ = 'categorias'
@@ -21,7 +20,6 @@ class Categorias(db.Model):
     def __repr__(self):
         return f'<Categorias:  {self.id}>'
 
-
 class Articulos(db.Model):
     """Artículos de nuestra tienda"""
     __tablename__ = 'articulos'
@@ -37,7 +35,7 @@ class Articulos(db.Model):
     categoria = relationship("Categorias", back_populates="articulos")
 
     def precio_final(self):
-        return self. precio + (self.precio * self.iva / 100)
+        return self.precio + (self.precio * self.iva / 100)
 
     def __repr__(self):
         return f'<Articulos: {self.id}>'
