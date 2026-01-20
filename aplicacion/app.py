@@ -1,27 +1,25 @@
 from flask import Flask, render_template
 from flask_bootstrap import Bootstrap5
 from aplicacion import config
+from aplicacion.models import Articulos, Categorias, db
 
 app = Flask(__name__)
 bootstrap = Bootstrap5(app)
 app.config.from_object(config)
 
-# ImportError: cannot import name 'db' from partially initialized module 'aplicacion.app'
-# (most likely due to a circular import)
-# from flask_sqlalchemy import SQLAlchemy
-# db = SQLAlchemy(app)
-
-from aplicacion.models import Articulos, Categorias, db
 db.init_app(app)
 
-
 @app.route('/')
+@app.route('/categoria/') 
 @app.route('/categoria/<id>')
 def inicio(id='0'):
-    categoria = Categorias.query.get(id)
+    # Si la id es '0' (o nula), intentamos obtener categoría, que será None
+    # pero nuestra lógica en el template ya sabe manejarlo.
     if id == '0':
+        categoria = None
         articulos = Articulos.query.all()
     else:
+        categoria = Categorias.query.get(id)
         articulos = Articulos.query.filter_by(CategoriaId=id)
 
     categorias = Categorias.query.all()
@@ -32,12 +30,10 @@ def inicio(id='0'):
         categoria=categoria
     )
 
-
 @app.route('/categorias')
 def categorias():
     categorias = Categorias.query.all()
     return render_template("categorias.html", categorias=categorias)
-
 
 @app.errorhandler(404)
 def page_not_found(error):
