@@ -15,13 +15,21 @@
                 {% endif %}
                 {% endfor %}
             </div>
+            </br>
+            <div>
+                <a class="btn btn-primary" href="{{ url_for('articulos_new') }}" role="button">Nuevo videojuego</a>
+            </div>
+            <br>
+            <div>
+                <a class="btn btn-secondary" href="{{url_for('categorias_new')}}" role="button">Nueva categoría</a>
+            </div>
         </div>
         <div class="col-md-10">
             {# Mostramos el nombre de la categoría o 'Todos' si es la página de inicio #}
             <h3>Nuestros videojuegos... ({{ categoria.nombre if categoria else 'Todos' }})</h3>
             <div class="panel panel-default">
                 <table class="table table-bordered">
-                    <tr>    
+                    <tr>
                         <th></th>
                         <th>Nombre</th>
                         <th>Descripción</th>
