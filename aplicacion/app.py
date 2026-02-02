@@ -1,20 +1,20 @@
 from flask import Flask, render_template, redirect, url_for, request, abort
 from flask_bootstrap import Bootstrap5
 from werkzeug.utils import secure_filename
-from flask_login import login_user, logout_user, login_required, current_user
+from flask_login import login_required, current_user
 import os
 
 from aplicacion import config
 from aplicacion.models import Articulos, Categorias, Usuarios, db
 from aplicacion.forms import formArticulo, formCategoria, formSINO, LoginForm
-from aplicacion.login import login_manager
+from aplicacion.login import login_manager, login_user, logout_user
 
 app = Flask(__name__)
 bootstrap = Bootstrap5(app)
 app.config.from_object(config)
 
 db.init_app(app)
-login_manager.init_app(app)  # <--- Inicializamos LoginManager aquí
+login_manager.init_app(app)
 
 @app.route('/')
 @app.route('/categoria/') 
@@ -65,119 +65,84 @@ def articulos_new():
         art = Articulos()
         form.populate_obj(art)
         art.image = nombre_fichero
-        
         db.session.add(art)
         db.session.commit()
-        
         return redirect(url_for("inicio"))
-    else:
-        return render_template("articulos_new.html", form=form)
-    
+    return render_template("articulos_new.html", form=form)
+
 @app.route('/categorias/new', methods=["get", "post"])
 @login_required
 def categorias_new():
-    form=formCategoria(request.form)
+    form = formCategoria(request.form)
     if form.validate_on_submit():
-        cat=Categorias(nombre=form.nombre.data)
+        cat = Categorias(nombre=form.nombre.data)
         db.session.add(cat)
         db.session.commit()
         return redirect(url_for("categorias"))
-    else:
-        return render_template("categorias_new.html",form=form)
-    
+    return render_template("categorias_new.html", form=form)
 
-@app.route('/articulos/<id>/edit', methods=["get","post"])
+@app.route('/articulos/<id>/edit', methods=["get", "post"])
 @login_required
 def articulos_edit(id):
-    art=Articulos.query.get(id)
+    art = Articulos.query.get(id)
     if art is None:
         abort(404)
-    form=formArticulo(obj=art)
-    categorias=[(c.id, c.nombre) for c in Categorias.query.all()]
+    form = formArticulo(obj=art)
+    categorias = [(c.id, c.nombre) for c in Categorias.query.all()]
     form.CategoriaId.choices = categorias
     if form.validate_on_submit():
         if form.photo.data: 
             if art.image:
                 try:
-                    os.remove(app.root_path+"/static/img/"+art.image)
+                    os.remove(app.root_path + "/static/img/" + art.image)
                 except:
                     pass
             try:
                 f = form.photo.data
-                nombre_fichero=secure_filename(f.filename)
-                f.save(app.root_path+"/static/img/"+nombre_fichero)
+                nombre_fichero = secure_filename(f.filename)
+                f.save(app.root_path + "/static/img/" + nombre_fichero)
             except:
-                nombre_fichero=""
+                nombre_fichero = ""
         else:
-            nombre_fichero=art.image
+            nombre_fichero = art.image
         form.populate_obj(art)
-        art.image=nombre_fichero
+        art.image = nombre_fichero
         db.session.commit()
         return redirect(url_for("inicio"))
-    return render_template("articulos_new.html",form=form)
+    return render_template("articulos_new.html", form=form)
 
-
-@app.route('/articulos/<id>/delete', methods=["get","post"])
+@app.route('/articulos/<id>/delete', methods=["get", "post"])
 @login_required
 def articulos_delete(id):
-    art=Articulos.query.get(id)
+    art = Articulos.query.get(id)
     if art is None:
         abort(404)
-    form=formSINO()
+    form = formSINO()
     if form.validate_on_submit():
         if form.si.data:
-            if art.image!="":
+            if art.image != "":
                 try:
-                    os.remove(app.root_path+"/static/img/"+art.image)
+                    os.remove(app.root_path + "/static/img/" + art.image)
                 except:
                     pass
             db.session.delete(art)
             db.session.commit()
         return redirect(url_for("inicio"))
-    return render_template("articulos_delete.html",form=form,art=art)
-
-@app.route('/categorias/<id>/edit', methods=["get", "post"])
-@login_required
-def categorias_edit(id):
-    cat = Categorias.query.get(id)
-    if cat is None:
-        abort(404)
-    form = formCategoria(obj=cat)
-    if form.validate_on_submit():
-        cat.nombre = form.nombre.data
-        db.session.commit()
-        return redirect(url_for("categorias"))
-    return render_template("categorias_new.html", form=form)
-
-@app.route('/categorias/<id>/delete', methods=["get", "post"])
-@login_required
-def categorias_delete(id):
-    cat = Categorias.query.get(id)
-    if cat is None:
-        abort(404)
-    form = formSINO()
-    if form.validate_on_submit():
-        if form.si.data:
-            db.session.delete(cat)
-            db.session.commit()
-        return redirect(url_for("categorias"))
-    return render_template("categorias_delete.html", form=form, cat=cat)
+    return render_template("articulos_delete.html", form=form, art=art)
 
 @app.route('/login', methods=['get', 'post'])
 def login():
-    if current_user.is_authenticated:
-        return redirect(url_for("inicio"))
     form = LoginForm()
     if form.validate_on_submit():
         user = Usuarios.query.filter_by(username=form.username.data).first()
-        if user is not None and user.password == form.password.data:
+        if user is not None and user.verify_password(form.password.data):
             login_user(user)
-            return redirect(url_for('inicio'))
-        else:
-            form.username.errors.append("Usuario o contraseña incorrectas.")
+            next_page = request.args.get('next')
+            return redirect(next_page or url_for('inicio'))
+        form.username.errors.append("Usuario o contraseña incorrectas.")
     return render_template('login.html', form=form)
 
 @app.route('/logout')
 def logout():
     logout_user()
-    return redirect(url_for('inicio'))
+    return redirect(url_for('login'))

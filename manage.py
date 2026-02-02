@@ -1,32 +1,19 @@
 from aplicacion.app import app, db
 from aplicacion.models import Articulos, Categorias, Usuarios
-from click import echo, prompt
+from click import echo
+from getpass import getpass
 
 app.config['DEBUG'] = True
 
 @app.cli.command('create_tables')
 def create_tables():
-    """Create relational database tables."""
     db.create_all()
     echo('Create relational database tables.')
 
 @app.cli.command('drop_tables')
 def drop_tables():
-    """Drop all project relational database tables. THIS DELETES DATA."""
     db.drop_all()
     echo('Drop all project relational database tables. THIS DELETES DATA.')
-
-@app.cli.command('create_user')
-def create_user():
-    """Create an initial admin user."""
-    db.create_all()
-    username = prompt('Introduce el nombre de usuario')
-    password = prompt('Introduce la contraseña', hide_input=True)
-    
-    user = Usuarios(username=username, password=password, admin=True)
-    db.session.add(user)
-    db.session.commit()
-    echo(f'Usuario administrador {username} creado con éxito.')
 
 @app.cli.command('add_data_tables')
 def add_data_tables():
@@ -52,3 +39,17 @@ def add_data_tables():
         juego = Articulos(**jue)
         db.session.add(juego)
         db.session.commit()
+
+@app.cli.command('create_admin')
+def create_admin():
+    usuario = {
+        "username": input("Usuario:"),
+        "password": getpass("Password:"),
+        "nombre": input("Nombre completo:"),
+        "email": input("Email:"),
+        "admin": True
+    }
+    usu = Usuarios(**usuario)
+    db.session.add(usu)
+    db.session.commit()
+    echo(f"Usuario administrador {usuario['username']} creado.")
