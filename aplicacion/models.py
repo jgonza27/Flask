@@ -1,8 +1,20 @@
-from sqlalchemy import Column, ForeignKey, Integer, String, Float
+from sqlalchemy import Column, ForeignKey, Integer, String, Float, Boolean
 from sqlalchemy.orm import relationship
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
+
+class Usuarios(db.Model):
+    """Tabla de usuarios para la gestión de acceso"""
+    __tablename__ = 'usuarios'
+
+    id = Column(Integer, primary_key=True)
+    username = Column(String(50), unique=True, nullable=False)
+    password = Column(String(255), nullable=False)
+    admin = Column(Boolean, default=False)
+
+    def __repr__(self):
+        return f'<Usuarios: {self.username}>'
 
 class Categorias(db.Model):
     """Categorías de los artículos"""

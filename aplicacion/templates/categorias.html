@@ -3,15 +3,29 @@
 {% block contenido %}
 <div class="container">
     <div class="row">
-        <h3>Categorias</h3>
+        <h3>Categorías</h3>
         <div class="list-group">
             <table class="table table-bordered">
                 <tr>
                     <th>Nombre</th>
+                    <th>Editar</th>
+                    <th>Borrar</th>
                 </tr>
-                {% for cat in categorias %}<tr>
+                {% for cat in categorias %}
+                <tr>
                     <td>{{cat.nombre}}</td>
-                </tr>{% endfor %}
+                    <td>
+                        <a href="{{ url_for('categorias_edit', id=cat.id) }}">
+                            <span class="bi bi-pencil"></span> Editar
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('categorias_delete', id=cat.id) }}">
+                            <span class="bi bi-trash"></span> Borrar
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
             </table>
         </div>
     </div>

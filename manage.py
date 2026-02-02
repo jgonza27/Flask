@@ -1,6 +1,6 @@
 from aplicacion.app import app, db
-from aplicacion.models import Articulos, Categorias
-from click import echo
+from aplicacion.models import Articulos, Categorias, Usuarios
+from click import echo, prompt
 
 app.config['DEBUG'] = True
 
@@ -16,6 +16,18 @@ def drop_tables():
     db.drop_all()
     echo('Drop all project relational database tables. THIS DELETES DATA.')
 
+@app.cli.command('create_user')
+def create_user():
+    """Create an initial admin user."""
+    db.create_all()
+    username = prompt('Introduce el nombre de usuario')
+    password = prompt('Introduce la contraseña', hide_input=True)
+    
+    user = Usuarios(username=username, password=password, admin=True)
+    db.session.add(user)
+    db.session.commit()
+    echo(f'Usuario administrador {username} creado con éxito.')
+
 @app.cli.command('add_data_tables')
 def add_data_tables():
     db.create_all()
@@ -30,7 +42,7 @@ def add_data_tables():
         {"nombre": "Hyper Soccer", "precio": 10, "descripcion": "Konami Hyper Soccer fue el primer videojuego de fútbol de Konami para una consola Nintendo, y considerado la semilla de las posteriores sagas International Superstar Soccer y Winning Eleven.", "stock": 7, "CategoriaId": 1, "image": "soccer.jpeg"},
         {"nombre": "Arkanoid", "precio": 15, "descripcion": "Arkanoid es un videojuego de arcade desarrollado por Taito en 1986. Está basado en los Breakout de Atari de los años 70.", "stock": 1, "CategoriaId": 2, "image": "arkanoid.jpeg"},
         {"nombre": "Tetris", "precio": 6, "descripcion": "Tetris es un videojuego de puzzle originalmente diseñado y programado por Alekséi Pázhitnov en la Unión Soviética.", "stock": 5, "CategoriaId": 2, "image": "tetris.jpeg"},
-        {"nombre": "Road Fighter", "precio": 15, "descripcion": "Road Fighter es un videojuego de carreras producido por Konami y lanzado en los arcades en 1984. Fue el primer juego de carreras desarrollado por esta compañía.", "stock": 10, "CategoriaId": 3, "image": "road.jpeg"},
+        {"nombre": "Road Fighter", "precio": 15, "descripcion": "Road Fighter es un videojuego de carreras producido por Konami y lanzado en los arcades in 1984. Fue el primer juego de carreras desarrollado por esta compañía.", "stock": 10, "CategoriaId": 3, "image": "road.jpeg"},
         {"nombre": "Out Run", "precio": 10, "descripcion": "Out Run es un videojuego de carreras creado en 1986 por Yu Suzuki y Sega-AM2, y publicado inicialmente para máquinas recreativas.", "stock": 3, "CategoriaId": 3, "image": "outrun.jpeg"},
         {"nombre": "Army Moves", "precio": 8, "descripcion": "Army Moves es un arcade y primera parte de la trilogía Moves diseñado por Víctor Ruiz, de Dinamic Software para Commodore Amiga, Amstrad CPC, Atari ST, Commodore 64, MSX y ZX Spectrum en 1986.", "stock": 8, "CategoriaId": 4, "image": "army.jpeg"},
         {"nombre": "La Abadia del Crimen", "precio": 4, "descripcion": "La Abadía del Crimen es un videojuego desarrollado inicialmente de forma freelance y publicado por la Academia Mister Chip en noviembre de 1987, posteriormente se publica bajo el sello de Opera Soft ya entrado 1988.", "stock": 10, "CategoriaId": 4, "image": "abadia.jpeg"},

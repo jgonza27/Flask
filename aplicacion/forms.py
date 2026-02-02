@@ -1,20 +1,26 @@
 from flask_wtf import FlaskForm
-from wtforms import DecimalField, IntegerField, SelectField, StringField, SubmitField, TextAreaField
+from wtforms import StringField, SubmitField, PasswordField
 from wtforms.validators import DataRequired
-from flask_wtf.file import FileField
-class formArticulo(FlaskForm):
-    nombre=StringField("Nombre:",validators=[DataRequired("Tienes que introducir el dato")])
-    precio=DecimalField("Precio:",default=0,validators=[DataRequired("Tienes que introducir el dato")])
-    iva=IntegerField("IVA:",default=21,validators=[DataRequired("Tienes que introducir el dato")])
-    descripcion= TextAreaField("Descripción:")
-    photo = FileField('Selecciona imagen:')
-    stock=IntegerField("Stock:",default=1,validators=[DataRequired("Tienes que introducir el dato")])
-    CategoriaId=SelectField("Categoría:",coerce=int)
-    submit = SubmitField('Enviar')
+
 class formCategoria(FlaskForm):
-    nombre=StringField("Nombre:",validators=[DataRequired("Tienes que introducir el dato")])
+    nombre = StringField("Nombre:", validators=[DataRequired("Tienes que introducir el dato")])
+    submit = SubmitField('Enviar')
+
+class formArticulo(FlaskForm):
+    nombre = StringField("Nombre:", validators=[DataRequired("Tienes que introducir el dato")])
+    precio = StringField("Precio:", validators=[DataRequired("Tienes que introducir el dato")])
+    iva = StringField("IVA:", validators=[DataRequired("Tienes que introducir el dato")])
+    descripcion = StringField("Descripción:", validators=[DataRequired("Tienes que introducir el dato")])
+    photo = StringField("Imagen:")
+    stock = StringField("Stock:", validators=[DataRequired("Tienes que introducir el dato")])
+    CategoriaId = StringField("Categoría:", validators=[DataRequired("Tienes que introducir el dato")])
     submit = SubmitField('Enviar')
 
 class formSINO(FlaskForm):
     si = SubmitField('Si')
     no = SubmitField('No')
+
+class LoginForm(FlaskForm):
+    username = StringField("Login", validators=[DataRequired("Tienes que introducir el dato")])
+    password = PasswordField("Password", validators=[DataRequired("Tienes que introducir el dato")])
+    submit = SubmitField('Entrar')

@@ -1,11 +1,12 @@
 from flask import Flask, render_template, redirect, url_for, request, abort
 from flask_bootstrap import Bootstrap5
 from werkzeug.utils import secure_filename
+from flask_login import login_user, logout_user, login_required, current_user
 import os
 
 from aplicacion import config
-from aplicacion.models import Articulos, Categorias, db
-from aplicacion.forms import formArticulo, formCategoria, formSINO
+from aplicacion.models import Articulos, Categorias, Usuarios, db
+from aplicacion.forms import formArticulo, formCategoria, formSINO, LoginForm
 
 app = Flask(__name__)
 bootstrap = Bootstrap5(app)
@@ -13,11 +14,13 @@ app.config.from_object(config)
 
 db.init_app(app)
 
+# Importamos la configuración de login para activar el login_manager
+from aplicacion.login import login_manager
+
 @app.route('/')
 @app.route('/categoria/') 
 @app.route('/categoria/<id>')
 def inicio(id='0'):
-    
     if id == '0':
         categoria = None
         articulos = Articulos.query.all()
@@ -46,6 +49,7 @@ def page_not_found(error):
     ), 404
 
 @app.route('/articulos/new', methods=["get", "post"])
+@login_required
 def articulos_new():
     form = formArticulo()
     categorias = [(c.id, c.nombre) for c in Categorias.query.all()]
@@ -71,6 +75,7 @@ def articulos_new():
         return render_template("articulos_new.html", form=form)
     
 @app.route('/categorias/new', methods=["get", "post"])
+@login_required
 def categorias_new():
     form=formCategoria(request.form)
     if form.validate_on_submit():
@@ -81,19 +86,22 @@ def categorias_new():
     else:
         return render_template("categorias_new.html",form=form)
     
-
 @app.route('/articulos/<id>/edit', methods=["get","post"])
+@login_required
 def articulos_edit(id):
     art=Articulos.query.get(id)
     if art is None:
         abort(404)
     form=formArticulo(obj=art)
-    categorias=[(c.id, c.nombre) for c in Categorias.query.all()[0:]]
+    categorias=[(c.id, c.nombre) for c in Categorias.query.all()]
     form.CategoriaId.choices = categorias
     if form.validate_on_submit():
         if form.photo.data: 
             if art.image:
-                os.remove(app.root_path+"/static/img/"+art.image)
+                try:
+                    os.remove(app.root_path+"/static/img/"+art.image)
+                except:
+                    pass
             try:
                 f = form.photo.data
                 nombre_fichero=secure_filename(f.filename)
@@ -108,8 +116,8 @@ def articulos_edit(id):
         return redirect(url_for("inicio"))
     return render_template("articulos_new.html",form=form)
 
-
 @app.route('/articulos/<id>/delete', methods=["get","post"])
+@login_required
 def articulos_delete(id):
     art=Articulos.query.get(id)
     if art is None:
@@ -118,9 +126,57 @@ def articulos_delete(id):
     if form.validate_on_submit():
         if form.si.data:
             if art.image!="":
-                os.remove(app.root_path+"/static/img/"+art.image)
+                try:
+                    os.remove(app.root_path+"/static/img/"+art.image)
+                except:
+                    pass
             db.session.delete(art)
             db.session.commit()
         return redirect(url_for("inicio"))
     return render_template("articulos_delete.html",form=form,art=art)
-    
+
+@app.route('/categorias/<id>/edit', methods=["get", "post"])
+@login_required
+def categorias_edit(id):
+    cat = Categorias.query.get(id)
+    if cat is None:
+        abort(404)
+    form = formCategoria(obj=cat)
+    if form.validate_on_submit():
+        cat.nombre = form.nombre.data
+        db.session.commit()
+        return redirect(url_for("categorias"))
+    return render_template("categorias_new.html", form=form)
+
+@app.route('/categorias/<id>/delete', methods=["get", "post"])
+@login_required
+def categorias_delete(id):
+    cat = Categorias.query.get(id)
+    if cat is None:
+        abort(404)
+    form = formSINO()
+    if form.validate_on_submit():
+        if form.si.data:
+            db.session.delete(cat)
+            db.session.commit()
+        return redirect(url_for("categorias"))
+    return render_template("categorias_delete.html", form=form, cat=cat)
+
+@app.route('/login', methods=['get', 'post'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for("inicio"))
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = Usuarios.query.filter_by(username=form.username.data).first()
+        if user is not None and user.password == form.password.data:
+            login_user(user)
+            return redirect(url_for('inicio'))
+        else:
+            form.username.errors.append("Usuario o contraseña incorrectas.")
+    return render_template('login.html', form=form)
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('inicio'))

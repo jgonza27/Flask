@@ -4,17 +4,17 @@
 <div class="container">
     <div class="col-md-2"></div>
     <div class="col-md-6">
-        <h3>Nueva Categorias</h3>
+        <h3>
+            {% if form.nombre.data %} Modificar Categoría {% else %} Nueva Categoría {% endif %}
+        </h3>
 
-        {# Gestión de errores del formulario #}
         {% for field, errors in form.errors.items() %}
         <div class="alert alert-danger">
             {{ form[field].label }}: {{ ', '.join(errors) }}
         </div>
         {% endfor %}
 
-        {# Formulario de creación #}
-        <form class="form-horizontal" action="{{url_for('categorias_new')}}" method="post">
+        <form class="form-horizontal" method="post">
             <div class="form-group">
                 {{ form.csrf_token }}
                 {{ form.nombre.label() }}
@@ -25,4 +25,4 @@
         </form>
     </div>
 </div>
-{% endblock %}
+{% endblock %}  
