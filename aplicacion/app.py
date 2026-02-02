@@ -7,15 +7,14 @@ import os
 from aplicacion import config
 from aplicacion.models import Articulos, Categorias, Usuarios, db
 from aplicacion.forms import formArticulo, formCategoria, formSINO, LoginForm
+from aplicacion.login import login_manager
 
 app = Flask(__name__)
 bootstrap = Bootstrap5(app)
 app.config.from_object(config)
 
 db.init_app(app)
-
-# Importamos la configuración de login para activar el login_manager
-from aplicacion.login import login_manager
+login_manager.init_app(app)  # <--- Inicializamos LoginManager aquí
 
 @app.route('/')
 @app.route('/categoria/') 
@@ -86,6 +85,7 @@ def categorias_new():
     else:
         return render_template("categorias_new.html",form=form)
     
+
 @app.route('/articulos/<id>/edit', methods=["get","post"])
 @login_required
 def articulos_edit(id):
@@ -115,6 +115,7 @@ def articulos_edit(id):
         db.session.commit()
         return redirect(url_for("inicio"))
     return render_template("articulos_new.html",form=form)
+
 
 @app.route('/articulos/<id>/delete', methods=["get","post"])
 @login_required

@@ -1,10 +1,11 @@
 from sqlalchemy import Column, ForeignKey, Integer, String, Float, Boolean
 from sqlalchemy.orm import relationship
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin  # <--- Importante
 
 db = SQLAlchemy()
 
-class Usuarios(db.Model):
+class Usuarios(db.Model, UserMixin):  # <--- Heredamos de UserMixin
     """Tabla de usuarios para la gestión de acceso"""
     __tablename__ = 'usuarios'
 
