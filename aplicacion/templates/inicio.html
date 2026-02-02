@@ -46,7 +46,11 @@
                         <td>{{art.nombre}}</td>
                         <td>{{art.descripcion}}</td>
                         <td>{{art.precio_final()}}</td>
-                        <td><a href="#"><span class="glyphicon glyphicon-shopping-cart"></span> Comprar</a></td>
+                        <td><a href="#"><span class="bi bi-cart"></span> Comprar</a></td>
+                        <td><a href="{{url_for('articulos_edit',id=art.id)}}"><span class="bi bi-pencil"></span>
+                                Modificar</a></td>
+                        <td><a href="{{url_for('articulos_delete',id=art.id)}}"><span class="bi bi-trash"></span> Borrar
+                            </a></td>
                     </tr>{% endfor %}
                 </table>
             </div>

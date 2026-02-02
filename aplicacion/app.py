@@ -1,8 +1,11 @@
-from flask import Flask, render_template, redirect, url_for, request
+from flask import Flask, render_template, redirect, url_for, request, abort
 from flask_bootstrap import Bootstrap5
+from werkzeug.utils import secure_filename
+import os
+
 from aplicacion import config
 from aplicacion.models import Articulos, Categorias, db
-from aplicacion.forms import formArticulo, formCategoria
+from aplicacion.forms import formArticulo, formCategoria, formSINO
 
 app = Flask(__name__)
 bootstrap = Bootstrap5(app)
@@ -14,8 +17,7 @@ db.init_app(app)
 @app.route('/categoria/') 
 @app.route('/categoria/<id>')
 def inicio(id='0'):
-    # Si la id es '0' (o nula), intentamos obtener categoría, que será None
-    # pero nuestra lógica en el template ya sabe manejarlo.
+    
     if id == '0':
         categoria = None
         articulos = Articulos.query.all()
@@ -46,7 +48,6 @@ def page_not_found(error):
 @app.route('/articulos/new', methods=["get", "post"])
 def articulos_new():
     form = formArticulo()
-    # Consultamos las categorías para el desplegable del formulario
     categorias = [(c.id, c.nombre) for c in Categorias.query.all()]
     form.CategoriaId.choices = categorias
     
@@ -79,4 +80,47 @@ def categorias_new():
         return redirect(url_for("categorias"))
     else:
         return render_template("categorias_new.html",form=form)
+    
+
+@app.route('/articulos/<id>/edit', methods=["get","post"])
+def articulos_edit(id):
+    art=Articulos.query.get(id)
+    if art is None:
+        abort(404)
+    form=formArticulo(obj=art)
+    categorias=[(c.id, c.nombre) for c in Categorias.query.all()[0:]]
+    form.CategoriaId.choices = categorias
+    if form.validate_on_submit():
+        if form.photo.data: 
+            if art.image:
+                os.remove(app.root_path+"/static/img/"+art.image)
+            try:
+                f = form.photo.data
+                nombre_fichero=secure_filename(f.filename)
+                f.save(app.root_path+"/static/img/"+nombre_fichero)
+            except:
+                nombre_fichero=""
+        else:
+            nombre_fichero=art.image
+        form.populate_obj(art)
+        art.image=nombre_fichero
+        db.session.commit()
+        return redirect(url_for("inicio"))
+    return render_template("articulos_new.html",form=form)
+
+
+@app.route('/articulos/<id>/delete', methods=["get","post"])
+def articulos_delete(id):
+    art=Articulos.query.get(id)
+    if art is None:
+        abort(404)
+    form=formSINO()
+    if form.validate_on_submit():
+        if form.si.data:
+            if art.image!="":
+                os.remove(app.root_path+"/static/img/"+art.image)
+            db.session.delete(art)
+            db.session.commit()
+        return redirect(url_for("inicio"))
+    return render_template("articulos_delete.html",form=form,art=art)
     
