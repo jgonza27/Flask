@@ -1,11 +1,7 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, PasswordField, DecimalField, IntegerField, TextAreaField, SelectField
+from wtforms import DecimalField, IntegerField, PasswordField, SelectField, StringField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired
 from flask_wtf.file import FileField
-
-class formCategoria(FlaskForm):
-    nombre = StringField("Nombre:", validators=[DataRequired("Tienes que introducir el dato")])
-    submit = SubmitField('Enviar')
 
 class formArticulo(FlaskForm):
     nombre = StringField("Nombre:", validators=[DataRequired("Tienes que introducir el dato")])
@@ -17,11 +13,15 @@ class formArticulo(FlaskForm):
     CategoriaId = SelectField("Categoría:", coerce=int, validators=[DataRequired("Tienes que introducir el dato")])
     submit = SubmitField('Enviar')
 
+class formCategoria(FlaskForm):
+    nombre = StringField("Nombre:", validators=[DataRequired("Tienes que introducir el dato")])
+    submit = SubmitField('Enviar')
+
 class formSINO(FlaskForm):
     si = SubmitField('Si')
     no = SubmitField('No')
 
 class LoginForm(FlaskForm):
-    username = StringField("Login", validators=[DataRequired("Tienes que introducir el dato")])
-    password = PasswordField("Password", validators=[DataRequired("Tienes que introducir el dato")])
+    username = StringField('Login', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
     submit = SubmitField('Entrar')

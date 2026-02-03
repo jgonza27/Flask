@@ -1,38 +1,26 @@
 {% extends "base2.html" %}
 {% block title %}Tienda de Videojuegos{% endblock %}
-
-{# CAMBIAR 'contenido' POR 'content' #}
-{% block content %}
+{% block contenido %}
 
 <div class="container">
-    <div class="row">
-        <div class="col-md-4"></div>
-        <div class="col-md-4">
-            <form class="form-signin" method="post">
-                {% for field, errors in form.errors.items() %}
-                <div class="alert alert-danger">
-                    {{ form[field].label }}: {{ ', '.join(errors) }}
-                </div>
-                {% endfor %}
+    <div class="col-md-4"></div>
+    <div class="col-md-4">
+        <form class="form-signin" method="post">
+            {% for field, errors in form.errors.items() %}
+            <div class="alert alert-danger">
+                {{ form[field].label }}: {{ ', '.join(errors) }}
+            </div>
+            {% endfor %}
+            <h2 class="form-signin-heading">Login</h2>
+            {{ form.csrf_token }}
+            {{form.username.label()}}
+            {{form.username(class="form-control")}}
 
-                <h2 class="form-signin-heading">Login</h2>
-                {{ form.csrf_token }}
-
-                <div class="mb-3">
-                    {{ form.username.label() }}
-                    {{ form.username(class="form-control") }}
-                </div>
-
-                <div class="mb-3">
-                    {{ form.password.label() }}
-                    {{ form.password(class="form-control") }}
-                </div>
-
-                {{ form.submit(class="btn btn-lg btn-primary btn-block w-100") }}
-            </form>
-        </div>
-        <div class="col-md-4"></div>
+            {{form.password.label()}}
+            {{form.password(class="form-control")}}
+            {{form.submit(class="btn btn-lg btn-primary btn-block")}}
+        </form>
     </div>
-</div>
-
+    <div class="col-md-4"></div>
+</div> <!-- /container -->
 {% endblock %}
