@@ -6,10 +6,7 @@ import os
 from aplicacion import config
 from aplicacion.models import Articulos, Categorias, Usuarios, db
 from aplicacion.forms import formArticulo, formCategoria, formSINO, LoginForm, formUsuario, formChangePassword
-from aplicacion.login import login_user, logout_user
-
-def Is_admin():
-    return "id" in session and session["admin"]
+from aplicacion.login import login_user, logout_user, is_admin
 
 app = Flask(__name__)
 bootstrap = Bootstrap5(app)
@@ -45,7 +42,7 @@ def page_not_found(error):
 
 @app.route('/articulos/new', methods=["get", "post"])
 def articulos_new():
-    if not Is_admin():
+    if not is_admin():
         return redirect(url_for("login"))
     form = formArticulo()
     categorias = [(c.id, c.nombre) for c in Categorias.query.all()]
@@ -69,7 +66,7 @@ def articulos_new():
 
 @app.route('/categorias/new', methods=["get", "post"])
 def categorias_new():
-    if not Is_admin():
+    if not is_admin():
         return redirect(url_for("login"))
     form = formCategoria(request.form)
     if form.validate_on_submit():
@@ -81,7 +78,7 @@ def categorias_new():
 
 @app.route('/articulos/<id>/edit', methods=["get", "post"])
 def articulos_edit(id):
-    if not Is_admin():
+    if not is_admin():
         return redirect(url_for("login"))
     art = Articulos.query.get(id)
     if art is None:
@@ -112,7 +109,7 @@ def articulos_edit(id):
 
 @app.route('/articulos/<id>/delete', methods=["get", "post"])
 def articulos_delete(id):
-    if not Is_admin():
+    if not is_admin():
         return redirect(url_for("login"))
     art = Articulos.query.get(id)
     if art is None:
@@ -132,7 +129,7 @@ def articulos_delete(id):
 
 @app.route('/categorias/<id>/edit', methods=["get", "post"])
 def categorias_edit(id):
-    if not Is_admin():
+    if not is_admin():
         return redirect(url_for("login"))
     cat = Categorias.query.get(id)
     if cat is None:
@@ -146,7 +143,7 @@ def categorias_edit(id):
 
 @app.route('/categorias/<id>/delete', methods=["get", "post"])
 def categorias_delete(id):
-    if not Is_admin():
+    if not is_admin():
         return redirect(url_for("login"))
     cat = Categorias.query.get(id)
     if cat is None:
