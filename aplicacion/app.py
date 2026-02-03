@@ -5,7 +5,7 @@ import os
 
 from aplicacion import config
 from aplicacion.models import Articulos, Categorias, Usuarios, db
-from aplicacion.forms import formArticulo, formCategoria, formSINO, LoginForm
+from aplicacion.forms import formArticulo, formCategoria, formSINO, LoginForm, formUsuario
 from aplicacion.login import login_user, logout_user
 
 app = Flask(__name__)
@@ -160,3 +160,18 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('login'))
+
+@app.route('/register', methods=['get', 'post'])
+def register():
+    form = formUsuario()
+    if form.validate_on_submit():
+        existe_usuario = Usuarios.query.filter_by(username=form.username.data).first()
+        if existe_usuario is None:
+            user = Usuarios()
+            form.populate_obj(user)
+            user.admin = False
+            db.session.add(user)
+            db.session.commit()
+            return redirect(url_for("inicio"))
+        form.username.errors.append("Nombre de usuario ya existe.")
+    return render_template("register.html", form=form)
