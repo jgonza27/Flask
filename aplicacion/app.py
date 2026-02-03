@@ -1,12 +1,15 @@
-from flask import Flask, render_template, redirect, url_for, request, abort
+from flask import Flask, render_template, redirect, url_for, request, abort, session
 from flask_bootstrap import Bootstrap5
 from werkzeug.utils import secure_filename
 import os
 
 from aplicacion import config
 from aplicacion.models import Articulos, Categorias, Usuarios, db
-from aplicacion.forms import formArticulo, formCategoria, formSINO, LoginForm, formUsuario
+from aplicacion.forms import formArticulo, formCategoria, formSINO, LoginForm, formUsuario, formChangePassword
 from aplicacion.login import login_user, logout_user
+
+def Is_admin():
+    return "id" in session and session["admin"]
 
 app = Flask(__name__)
 bootstrap = Bootstrap5(app)
@@ -42,6 +45,8 @@ def page_not_found(error):
 
 @app.route('/articulos/new', methods=["get", "post"])
 def articulos_new():
+    if not Is_admin():
+        return redirect(url_for("login"))
     form = formArticulo()
     categorias = [(c.id, c.nombre) for c in Categorias.query.all()]
     form.CategoriaId.choices = categorias
@@ -64,6 +69,8 @@ def articulos_new():
 
 @app.route('/categorias/new', methods=["get", "post"])
 def categorias_new():
+    if not Is_admin():
+        return redirect(url_for("login"))
     form = formCategoria(request.form)
     if form.validate_on_submit():
         cat = Categorias(nombre=form.nombre.data)
@@ -74,6 +81,8 @@ def categorias_new():
 
 @app.route('/articulos/<id>/edit', methods=["get", "post"])
 def articulos_edit(id):
+    if not Is_admin():
+        return redirect(url_for("login"))
     art = Articulos.query.get(id)
     if art is None:
         abort(404)
@@ -103,6 +112,8 @@ def articulos_edit(id):
 
 @app.route('/articulos/<id>/delete', methods=["get", "post"])
 def articulos_delete(id):
+    if not Is_admin():
+        return redirect(url_for("login"))
     art = Articulos.query.get(id)
     if art is None:
         abort(404)
@@ -121,6 +132,8 @@ def articulos_delete(id):
 
 @app.route('/categorias/<id>/edit', methods=["get", "post"])
 def categorias_edit(id):
+    if not Is_admin():
+        return redirect(url_for("login"))
     cat = Categorias.query.get(id)
     if cat is None:
         abort(404)
@@ -133,6 +146,8 @@ def categorias_edit(id):
 
 @app.route('/categorias/<id>/delete', methods=["get", "post"])
 def categorias_delete(id):
+    if not Is_admin():
+        return redirect(url_for("login"))
     cat = Categorias.query.get(id)
     if cat is None:
         abort(404)
@@ -161,17 +176,45 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-@app.route('/register', methods=['get', 'post'])
-def register():
-    form = formUsuario()
+@app.route('/registro',methods=["get","post"])
+def registro():
+    form=formUsuario()
     if form.validate_on_submit():
-        existe_usuario = Usuarios.query.filter_by(username=form.username.data).first()
-        if existe_usuario is None:
-            user = Usuarios()
+        existe_usuario=Usuarios.query.filter_by(username=form.username.data).first()
+        if existe_usuario==None:
+            user=Usuarios()
             form.populate_obj(user)
-            user.admin = False
+            user.admin=False
             db.session.add(user)
             db.session.commit()
             return redirect(url_for("inicio"))
         form.username.errors.append("Nombre de usuario ya existe.")
-    return render_template("register.html", form=form)
+    return render_template("usuarios_new.html", form=form)
+
+@app.route('/perfil/<username>',methods=["get","post"])
+def perfil(username):
+    user=Usuarios.query.filter_by(username=username).first()
+    if user is None:
+        abort(404)
+    form=formUsuario(request.form,obj=user)
+    del form.password
+    if form.validate_on_submit():
+        form.populate_obj(user)
+        db.session.commit()
+        return redirect(url_for("inicio"))
+    return render_template("usuarios_new.html",form=form,perfil=True)
+
+@app.route('/changepassword/<username>',methods=["get","post"])
+def changepassword(username):
+    user=Usuarios.query.filter_by(username=username).first()
+    if user is None:
+        abort(404)
+    form=formChangePassword()
+    if form.validate_on_submit():
+        form.populate_obj(user)
+        db.session.commit()
+        return redirect(url_for("inicio"))
+    return render_template("changepassword.html",form=form)
+
+
+
