@@ -59,7 +59,6 @@
                         {# if is_login #}
                         {% if current_user.is_authenticated %}
                         <td>
-                            <!-- Refactorizamos el elemento a para especificar la ruta del controlador carrito_add <a href="#"> -->
                             <a href="{{ url_for('carrito_add',id=art.id) }}"><span class="bi bi-cart"></span>
                                 Comprar</a>
                         </td>
