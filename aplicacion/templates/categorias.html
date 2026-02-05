@@ -7,13 +7,17 @@
         <div class="list-group">
             <table class="table table-bordered">
                 <tr>
+                <tr>
                     <th>Nombre</th>
+                    {% if current_user.is_authenticated and current_user.is_admin() %}
                     <th>Editar</th>
                     <th>Borrar</th>
+                    {% endif %}
                 </tr>
                 {% for cat in categorias %}
                 <tr>
                     <td>{{cat.nombre}}</td>
+                    {% if current_user.is_authenticated and current_user.is_admin() %}
                     <td>
                         <a href="{{ url_for('categorias_edit', id=cat.id) }}">
                             <span class="bi bi-pencil"></span> Editar
@@ -24,6 +28,7 @@
                             <span class="bi bi-trash"></span> Borrar
                         </a>
                     </td>
+                    {% endif %}
                 </tr>
                 {% endfor %}
             </table>

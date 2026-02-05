@@ -1,19 +1,53 @@
-from flask import Flask, render_template, redirect, url_for, request, abort, session
+import os
+from flask import Flask, render_template, redirect, url_for, request, abort, session, make_response
 from flask_bootstrap import Bootstrap5
 from werkzeug.utils import secure_filename
-import os
-
 from aplicacion import config
+import json
+
 from aplicacion.models import Articulos, Categorias, Usuarios, db
-from aplicacion.forms import formArticulo, formCategoria, formSINO, LoginForm, formUsuario, formChangePassword
-from aplicacion.login import login_user, logout_user, is_admin
+from aplicacion.forms import formArticulo, formCategoria, formSINO, LoginForm, formUsuario, formChangePassword, formCarrito
+#from aplicacion.login import login_user, logout_user, is_admin, is_login
+# ImportError: cannot import name 'app' from partially initialized module 'aplicacion.app' (most likely due to a circular import) (/flask/proyecto2/aplicacion/app.py)
+## - - - - - - - - - 
+
 
 app = Flask(__name__)
 bootstrap = Bootstrap5(app)
 app.config.from_object(config)
+app.config.from_object(config)
+app.config.from_object(config)
+app.config.from_object(config)
 db.init_app(app)
 
+# @app.context_processor
+# def login():
+#     if "id" in session:
+#         return {'is_login':True}
+#     else:
+#         return {'is_login':False}
+# @app.context_processor
+# def admin():
+#     return {'is_admin':session.get("admin",False)}
+## - - - - Gestion flask_login - - - - - - - - 
+from flask_login import LoginManager,login_user,logout_user,login_required,current_user
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login"
+@login_manager.user_loader
+def load_user(user_id):
+    return Usuarios.query.get(int(user_id))
+## - - - - - - - - - - - - - - - - - - - - - - 
+
+bootstrap = Bootstrap5(app)
+app.config.from_object(config)
+db.init_app(app)
+
+
 @app.route('/')
+
+
+
 @app.route('/categoria/<id>')
 def inicio(id='0'):
     if id == '0':
@@ -41,123 +75,150 @@ def page_not_found(error):
     return render_template("error.html", error="Página no encontrada..."), 404
 
 @app.route('/articulos/new', methods=["get", "post"])
+@login_required
 def articulos_new():
-    if not is_admin():
-        return redirect(url_for("login"))
-    form = formArticulo()
-    categorias = [(c.id, c.nombre) for c in Categorias.query.all()]
+    # Control de permisos
+    #if not is_admin():
+    if not current_user.is_admin():
+        abort(404)
+    form=formArticulo()
+
+    categorias=[(c.id, c.nombre) for c in Categorias.query.all()]
     form.CategoriaId.choices = categorias
-    
     if form.validate_on_submit():
         try:
             f = form.photo.data
-            nombre_fichero = secure_filename(f.filename)
-            f.save(app.root_path + "/static/img/" + nombre_fichero)
+            nombre_fichero=secure_filename(f.filename)
+            f.save(app.root_path+"/static/img/"+nombre_fichero)
         except:
-            nombre_fichero = ""
-            
-        art = Articulos()
+            nombre_fichero=""
+        art=Articulos()
         form.populate_obj(art)
-        art.image = nombre_fichero
+        art.image=nombre_fichero
         db.session.add(art)
         db.session.commit()
         return redirect(url_for("inicio"))
-    return render_template("articulos_new.html", form=form)
+    else:
+        return render_template("articulos_new.html",form=form)
+
 
 @app.route('/categorias/new', methods=["get", "post"])
+@login_required
 def categorias_new():
-    if not is_admin():
-        return redirect(url_for("login"))
-    form = formCategoria(request.form)
+    # Control de permisos
+    #if not is_admin():
+    if not current_user.is_admin():
+        abort(404)
+    form=formCategoria(request.form)
+
     if form.validate_on_submit():
-        cat = Categorias(nombre=form.nombre.data)
+        cat=Categorias(nombre=form.nombre.data)
         db.session.add(cat)
         db.session.commit()
         return redirect(url_for("categorias"))
-    return render_template("categorias_new.html", form=form)
+    else:
+        return render_template("categorias_new.html",form=form)
+
 
 @app.route('/articulos/<id>/edit', methods=["get", "post"])
+@login_required
 def articulos_edit(id):
-    if not is_admin():
-        return redirect(url_for("login"))
-    art = Articulos.query.get(id)
+    # Control de permisos
+    #if not is_admin():
+    if not current_user.is_admin():
+        abort(404)
+    art=Articulos.query.get(id)
+
     if art is None:
         abort(404)
-    form = formArticulo(obj=art)
-    categorias = [(c.id, c.nombre) for c in Categorias.query.all()]
+    form=formArticulo(obj=art)
+    categorias=[(c.id, c.nombre) for c in Categorias.query.all()]
     form.CategoriaId.choices = categorias
     if form.validate_on_submit():
-        if form.photo.data: 
-            if art.image:
-                try:
-                    os.remove(app.root_path + "/static/img/" + art.image)
-                except:
-                    pass
+        if form.photo.data: #Borramos la imagen anterior si hemos subido una nueva
+            os.remove(app.root_path+"/img/upload/"+art.image)
             try:
                 f = form.photo.data
-                nombre_fichero = secure_filename(f.filename)
-                f.save(app.root_path + "/static/img/" + nombre_fichero)
+                nombre_fichero=secure_filename(f.filename)
+                f.save(app.root_path+"/img/upload/"+nombre_fichero)
             except:
-                nombre_fichero = ""
+                nombre_fichero=""
         else:
-            nombre_fichero = art.image
+            nombre_fichero=art.image
         form.populate_obj(art)
-        art.image = nombre_fichero
+        art.image=nombre_fichero
         db.session.commit()
         return redirect(url_for("inicio"))
-    return render_template("articulos_new.html", form=form)
+    return render_template("articulos_new.html",form=form)
+
 
 @app.route('/articulos/<id>/delete', methods=["get", "post"])
+@login_required
 def articulos_delete(id):
-    if not is_admin():
-        return redirect(url_for("login"))
-    art = Articulos.query.get(id)
+    # Control de permisos
+    #if not is_admin():
+    if not current_user.is_admin():
+        abort(404)
+    art=Articulos.query.get(id)
+
     if art is None:
         abort(404)
-    form = formSINO()
+    form=formSINO()
     if form.validate_on_submit():
         if form.si.data:
-            if art.image != "":
-                try:
-                    os.remove(app.root_path + "/static/img/" + art.image)
-                except:
-                    pass
+            if art.image!="":
+                os.remove(app.root_path+"/static/img/"+art.image)
             db.session.delete(art)
             db.session.commit()
         return redirect(url_for("inicio"))
-    return render_template("articulos_delete.html", form=form, art=art)
+    return render_template("articulos_delete.html",form=form,art=art)
+
 
 @app.route('/categorias/<id>/edit', methods=["get", "post"])
+@login_required
 def categorias_edit(id):
-    if not is_admin():
-        return redirect(url_for("login"))
-    cat = Categorias.query.get(id)
+    # Control de permisos
+    #if not is_admin():
+    if not current_user.is_admin():
+        abort(404)
+    cat=Categorias.query.get(id)
+
     if cat is None:
         abort(404)
-    form = formCategoria(request.form, obj=cat)
+    form=formCategoria(request.form,obj=cat)
     if form.validate_on_submit():
         form.populate_obj(cat)
         db.session.commit()
         return redirect(url_for("categorias"))
-    return render_template("categorias_new.html", form=form)
+    return render_template("categorias_new.html",form=form)
+
 
 @app.route('/categorias/<id>/delete', methods=["get", "post"])
+@login_required
 def categorias_delete(id):
-    if not is_admin():
-        return redirect(url_for("login"))
-    cat = Categorias.query.get(id)
+    # Control de permisos
+    #if not is_admin():
+    if not current_user.is_admin():
+        abort(404)
+    cat=Categorias.query.get(id)
+
     if cat is None:
         abort(404)
-    form = formSINO()
+    form=formSINO()
     if form.validate_on_submit():
         if form.si.data:
             db.session.delete(cat)
             db.session.commit()
         return redirect(url_for("categorias"))
-    return render_template("categorias_delete.html", form=form, cat=cat)
+    return render_template("categorias_delete.html",form=form,cat=cat)
+
 
 @app.route('/login', methods=['get', 'post'])
 def login():
+    # Control de permisos
+    #if is_login():
+    if current_user.is_authenticated:
+        return redirect(url_for("inicio"))
     form = LoginForm()
     if form.validate_on_submit():
         user = Usuarios.query.filter_by(username=form.username.data).first()
@@ -168,14 +229,20 @@ def login():
         form.username.errors.append("Usuario o contraseña incorrectas.")
     return render_template('login.html', form=form)
 
+
 @app.route('/logout')
 def logout():
     logout_user()
     return redirect(url_for('login'))
 
-@app.route('/registro',methods=["get","post"])
+@app.route("/registro",methods=["get","post"])
 def registro():
+    # Control de permisos
+    #if is_login():
+    if current_user.is_authenticated:
+        return redirect(url_for("inicio"))
     form=formUsuario()
+
     if form.validate_on_submit():
         existe_usuario=Usuarios.query.filter_by(username=form.username.data).first()
         if existe_usuario==None:
@@ -188,9 +255,15 @@ def registro():
         form.username.errors.append("Nombre de usuario ya existe.")
     return render_template("usuarios_new.html", form=form)
 
+
 @app.route('/perfil/<username>',methods=["get","post"])
+@login_required
 def perfil(username):
+    # Control de permisos
+    #if not is_login():
+    #    return redirect(url_for("inicio"))
     user=Usuarios.query.filter_by(username=username).first()
+
     if user is None:
         abort(404)
     form=formUsuario(request.form,obj=user)
@@ -201,9 +274,15 @@ def perfil(username):
         return redirect(url_for("inicio"))
     return render_template("usuarios_new.html",form=form,perfil=True)
 
+
 @app.route('/changepassword/<username>',methods=["get","post"])
+@login_required
 def changepassword(username):
+    # Control de permisos
+    #if not is_login():
+    #    return redirect(url_for("inicio"))
     user=Usuarios.query.filter_by(username=username).first()
+
     if user is None:
         abort(404)
     form=formChangePassword()
@@ -212,6 +291,61 @@ def changepassword(username):
         db.session.commit()
         return redirect(url_for("inicio"))
     return render_template("changepassword.html",form=form)
+
+@app.route('/carrito/add/<id>',methods=["get","post"])
+@login_required
+def carrito_add(id):
+    art=Articulos.query.get(id)
+    form=formCarrito()
+    form.id.data=id
+    if form.validate_on_submit():
+        if art.stock>=int(form.cantidad.data):
+            try:
+                datos = json.loads(request.cookies.get(str(current_user.id)))
+            except:
+                datos = []
+            actualizar= False
+            for dato in datos:
+                if dato["id"]==id:
+                    dato["cantidad"]=form.cantidad.data
+                    actualizar = True
+            if not actualizar:
+                datos.append({"id":form.id.data,"cantidad":form.cantidad.data})
+            resp = make_response(redirect(url_for('inicio')))
+            resp.set_cookie(str(current_user.id),json.dumps(datos))
+            return resp
+        form.cantidad.errors.append("No hay artículos suficientes.")
+    return render_template("carrito_add.html",form=form,art=art)
+
+
+@app.route('/carrito')
+@login_required
+def carrito():
+    try:
+        datos = json.loads(request.cookies.get(str(current_user.id)))
+    except:
+        datos = []
+    articulos = []
+    cantidades = []
+    total = 0
+    for articulo in datos:
+        articulos.append(Articulos.query.get(articulo["id"]))
+        cantidades.append(articulo["cantidad"])
+        total = total + Articulos.query.get(articulo["id"]).precio_final() * articulo["cantidad"]
+    articulos = zip(articulos, cantidades)
+    return render_template("carrito.html", articulos=articulos, total=total)
+
+@app.context_processor
+def contar_carrito():
+    if not current_user.is_authenticated:
+        return {'num_articulos': 0}
+    if request.cookies.get(str(current_user.id)) is None:
+        return {'num_articulos': 0}
+    else:
+        datos = json.loads(request.cookies.get(str(current_user.id)))
+        return {'num_articulos': len(datos)}
+
+
 
 
 

@@ -39,8 +39,10 @@ class Articulos(db.Model):
     def __repr__(self):
         return f'<Articulos: {self.id}>'
 
-class Usuarios(db.Model):
+from flask_login import UserMixin
+class Usuarios(db.Model, UserMixin):
     __tablename__ = 'usuarios'
+
     id = Column(Integer, primary_key=True)
     username = Column(String(100),nullable=False)
     password_hash = Column(String(128),nullable=False)
@@ -57,3 +59,13 @@ class Usuarios(db.Model):
         self.password_hash = generate_password_hash(password)
     def verify_password(self, password):
         return check_password_hash(self.password_hash, password)
+    # def is_authenticated(self):
+    #   return True
+    # def is_active(self):
+    #   return True
+    # def is_anonymous(self):
+    #   return False
+    # def get_id(self):
+    #   return str(self.id)
+    def is_admin(self):
+        return self.admin
