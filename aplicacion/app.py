@@ -7,28 +7,12 @@ import json
 
 from aplicacion.models import Articulos, Categorias, Usuarios, db
 from aplicacion.forms import formArticulo, formCategoria, formSINO, LoginForm, formUsuario, formChangePassword, formCarrito
-#from aplicacion.login import login_user, logout_user, is_admin, is_login
-# ImportError: cannot import name 'app' from partially initialized module 'aplicacion.app' (most likely due to a circular import) (/flask/proyecto2/aplicacion/app.py)
-## - - - - - - - - - 
-
 
 app = Flask(__name__)
 bootstrap = Bootstrap5(app)
 app.config.from_object(config)
-app.config.from_object(config)
-app.config.from_object(config)
-app.config.from_object(config)
 db.init_app(app)
 
-# @app.context_processor
-# def login():
-#     if "id" in session:
-#         return {'is_login':True}
-#     else:
-#         return {'is_login':False}
-# @app.context_processor
-# def admin():
-#     return {'is_admin':session.get("admin",False)}
 ## - - - - Gestion flask_login - - - - - - - - 
 from flask_login import LoginManager,login_user,logout_user,login_required,current_user
 login_manager = LoginManager()
@@ -39,13 +23,7 @@ def load_user(user_id):
     return Usuarios.query.get(int(user_id))
 ## - - - - - - - - - - - - - - - - - - - - - - 
 
-bootstrap = Bootstrap5(app)
-app.config.from_object(config)
-db.init_app(app)
-
-
 @app.route('/')
-
 
 
 @app.route('/categoria/<id>')
@@ -78,7 +56,6 @@ def page_not_found(error):
 @login_required
 def articulos_new():
     # Control de permisos
-    #if not is_admin():
     if not current_user.is_admin():
         abort(404)
     form=formArticulo()
@@ -89,7 +66,7 @@ def articulos_new():
         try:
             f = form.photo.data
             nombre_fichero=secure_filename(f.filename)
-            f.save(app.root_path+"/static/img/"+nombre_fichero)
+            f.save(os.path.join(app.root_path, "static", "img", nombre_fichero))
         except:
             nombre_fichero=""
         art=Articulos()
@@ -106,7 +83,6 @@ def articulos_new():
 @login_required
 def categorias_new():
     # Control de permisos
-    #if not is_admin():
     if not current_user.is_admin():
         abort(404)
     form=formCategoria(request.form)
@@ -124,7 +100,6 @@ def categorias_new():
 @login_required
 def articulos_edit(id):
     # Control de permisos
-    #if not is_admin():
     if not current_user.is_admin():
         abort(404)
     art=Articulos.query.get(id)
@@ -136,11 +111,15 @@ def articulos_edit(id):
     form.CategoriaId.choices = categorias
     if form.validate_on_submit():
         if form.photo.data: #Borramos la imagen anterior si hemos subido una nueva
-            os.remove(app.root_path+"/img/upload/"+art.image)
+            if art.image:
+                try:
+                    os.remove(os.path.join(app.root_path, "static", "img", art.image))
+                except FileNotFoundError:
+                    pass
             try:
                 f = form.photo.data
                 nombre_fichero=secure_filename(f.filename)
-                f.save(app.root_path+"/img/upload/"+nombre_fichero)
+                f.save(os.path.join(app.root_path, "static", "img", nombre_fichero))
             except:
                 nombre_fichero=""
         else:
@@ -156,7 +135,6 @@ def articulos_edit(id):
 @login_required
 def articulos_delete(id):
     # Control de permisos
-    #if not is_admin():
     if not current_user.is_admin():
         abort(404)
     art=Articulos.query.get(id)
@@ -166,8 +144,11 @@ def articulos_delete(id):
     form=formSINO()
     if form.validate_on_submit():
         if form.si.data:
-            if art.image!="":
-                os.remove(app.root_path+"/static/img/"+art.image)
+            if art.image:
+                 try:
+                    os.remove(os.path.join(app.root_path, "static", "img", art.image))
+                 except FileNotFoundError:
+                    pass
             db.session.delete(art)
             db.session.commit()
         return redirect(url_for("inicio"))
@@ -178,7 +159,6 @@ def articulos_delete(id):
 @login_required
 def categorias_edit(id):
     # Control de permisos
-    #if not is_admin():
     if not current_user.is_admin():
         abort(404)
     cat=Categorias.query.get(id)
@@ -197,7 +177,6 @@ def categorias_edit(id):
 @login_required
 def categorias_delete(id):
     # Control de permisos
-    #if not is_admin():
     if not current_user.is_admin():
         abort(404)
     cat=Categorias.query.get(id)
@@ -216,7 +195,6 @@ def categorias_delete(id):
 @app.route('/login', methods=['get', 'post'])
 def login():
     # Control de permisos
-    #if is_login():
     if current_user.is_authenticated:
         return redirect(url_for("inicio"))
     form = LoginForm()
@@ -238,7 +216,6 @@ def logout():
 @app.route("/registro",methods=["get","post"])
 def registro():
     # Control de permisos
-    #if is_login():
     if current_user.is_authenticated:
         return redirect(url_for("inicio"))
     form=formUsuario()
@@ -259,9 +236,6 @@ def registro():
 @app.route('/perfil/<username>',methods=["get","post"])
 @login_required
 def perfil(username):
-    # Control de permisos
-    #if not is_login():
-    #    return redirect(url_for("inicio"))
     user=Usuarios.query.filter_by(username=username).first()
 
     if user is None:
@@ -278,9 +252,6 @@ def perfil(username):
 @app.route('/changepassword/<username>',methods=["get","post"])
 @login_required
 def changepassword(username):
-    # Control de permisos
-    #if not is_login():
-    #    return redirect(url_for("inicio"))
     user=Usuarios.query.filter_by(username=username).first()
 
     if user is None:
@@ -344,8 +315,3 @@ def contar_carrito():
     else:
         datos = json.loads(request.cookies.get(str(current_user.id)))
         return {'num_articulos': len(datos)}
-
-
-
-
-
