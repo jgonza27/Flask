@@ -22,11 +22,13 @@
                     <td>{{art.1}}</td>
                     <td>{{art.0.precio_final()}}</td>
                     <td>{{art.0.precio_final()*art.1}}</td>
-                    <td><a href="#"><span class="bi bi-trash"></span> Borrar</a></td>
+                    <td><a href="{{url_for('carrito_delete',id=art.0.id)}}"><span class="bi bi-trash"></span> Borrar</a>
+                    </td>
                 </tr>
                 {% endfor %}
             </table>
             <h2>Total:{{total}}</h2>
+            <a class="btn btn-primary" href="{{url_for('pedido')}}" role="button">Comprar</a>
         </div>
         {% else %}
         <h2>No hay artículos en el carrito</h2>

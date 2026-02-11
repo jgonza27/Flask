@@ -1,2 +1,6 @@
 /entornoVirtual
 /__pycache__
+/.venv
+/venv
+*.db
+dbase.db

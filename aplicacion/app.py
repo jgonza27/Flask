@@ -13,7 +13,6 @@ bootstrap = Bootstrap5(app)
 app.config.from_object(config)
 db.init_app(app)
 
-## - - - - Gestion flask_login - - - - - - - - 
 from flask_login import LoginManager,login_user,logout_user,login_required,current_user
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -21,7 +20,6 @@ login_manager.login_view = "login"
 @login_manager.user_loader
 def load_user(user_id):
     return Usuarios.query.get(int(user_id))
-## - - - - - - - - - - - - - - - - - - - - - - 
 
 @app.route('/')
 
@@ -55,7 +53,6 @@ def page_not_found(error):
 @app.route('/articulos/new', methods=["get", "post"])
 @login_required
 def articulos_new():
-    # Control de permisos
     if not current_user.is_admin():
         abort(404)
     form=formArticulo()
@@ -82,7 +79,6 @@ def articulos_new():
 @app.route('/categorias/new', methods=["get", "post"])
 @login_required
 def categorias_new():
-    # Control de permisos
     if not current_user.is_admin():
         abort(404)
     form=formCategoria(request.form)
@@ -99,7 +95,6 @@ def categorias_new():
 @app.route('/articulos/<id>/edit', methods=["get", "post"])
 @login_required
 def articulos_edit(id):
-    # Control de permisos
     if not current_user.is_admin():
         abort(404)
     art=Articulos.query.get(id)
@@ -110,7 +105,7 @@ def articulos_edit(id):
     categorias=[(c.id, c.nombre) for c in Categorias.query.all()]
     form.CategoriaId.choices = categorias
     if form.validate_on_submit():
-        if form.photo.data: #Borramos la imagen anterior si hemos subido una nueva
+        if form.photo.data: 
             if art.image:
                 try:
                     os.remove(os.path.join(app.root_path, "static", "img", art.image))
@@ -134,7 +129,6 @@ def articulos_edit(id):
 @app.route('/articulos/<id>/delete', methods=["get", "post"])
 @login_required
 def articulos_delete(id):
-    # Control de permisos
     if not current_user.is_admin():
         abort(404)
     art=Articulos.query.get(id)
@@ -158,7 +152,6 @@ def articulos_delete(id):
 @app.route('/categorias/<id>/edit', methods=["get", "post"])
 @login_required
 def categorias_edit(id):
-    # Control de permisos
     if not current_user.is_admin():
         abort(404)
     cat=Categorias.query.get(id)
@@ -176,7 +169,6 @@ def categorias_edit(id):
 @app.route('/categorias/<id>/delete', methods=["get", "post"])
 @login_required
 def categorias_delete(id):
-    # Control de permisos
     if not current_user.is_admin():
         abort(404)
     cat=Categorias.query.get(id)
@@ -194,7 +186,6 @@ def categorias_delete(id):
 
 @app.route('/login', methods=['get', 'post'])
 def login():
-    # Control de permisos
     if current_user.is_authenticated:
         return redirect(url_for("inicio"))
     form = LoginForm()
@@ -215,7 +206,6 @@ def logout():
 
 @app.route("/registro",methods=["get","post"])
 def registro():
-    # Control de permisos
     if current_user.is_authenticated:
         return redirect(url_for("inicio"))
     form=formUsuario()
@@ -315,3 +305,36 @@ def contar_carrito():
     else:
         datos = json.loads(request.cookies.get(str(current_user.id)))
         return {'num_articulos': len(datos)}
+
+@app.route('/carrito_delete/<id>')
+@login_required
+def carrito_delete(id):
+    try:
+        datos = json.loads(request.cookies.get(str(current_user.id)))
+    except:
+        datos = []
+    new_datos = []
+    for dato in datos:
+        if dato["id"] != id:
+            new_datos.append(dato)
+    resp = make_response(redirect(url_for('carrito')))
+    resp.set_cookie(str(current_user.id), json.dumps(new_datos))
+    return resp
+
+@app.route('/pedido')
+@login_required
+def pedido():
+    try:
+        datos = json.loads(request.cookies.get(str(current_user.id)))
+    except:
+        datos = []
+    total=0
+    for articulo in datos:
+        total=total+Articulos.query.get(articulo["id"]).precio_final()*articulo["cantidad"]
+        Articulos.query.get(articulo["id"]).stock-=articulo["cantidad"]
+        db.session.commit()
+    resp = make_response(render_template("pedido.html",total=total))
+    resp.set_cookie(str(current_user.id),"",expires=0)
+    return resp
+
+
