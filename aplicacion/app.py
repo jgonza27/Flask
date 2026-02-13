@@ -255,7 +255,7 @@ def changepassword(username):
 
 @app.route('/carrito/add/<id>',methods=["get","post"])
 @login_required
-def carrito_add(id):
+def carrito_add(id:int):
     art=Articulos.query.get(id)
     form=formCarrito()
     form.id.data=id
@@ -273,7 +273,7 @@ def carrito_add(id):
             if not actualizar:
                 datos.append({"id":form.id.data,"cantidad":form.cantidad.data})
             resp = make_response(redirect(url_for('inicio')))
-            resp.set_cookie(str(current_user.id),json.dumps(datos))
+            resp.set_cookie(str(current_user.id),json.dumps(datos),expires="")
             return resp
         form.cantidad.errors.append("No hay artículos suficientes.")
     return render_template("carrito_add.html",form=form,art=art)
@@ -308,7 +308,7 @@ def contar_carrito():
 
 @app.route('/carrito_delete/<id>')
 @login_required
-def carrito_delete(id):
+def carrito_delete(id:int):
     try:
         datos = json.loads(request.cookies.get(str(current_user.id)))
     except:
@@ -334,6 +334,13 @@ def pedido():
         Articulos.query.get(articulo["id"]).stock-=articulo["cantidad"]
         db.session.commit()
     resp = make_response(render_template("pedido.html",total=total))
+    #resp.set_cookie(str(current_user.id),"",expires=0)
+    return resp
+
+@app.route('/fin_pedido')
+@login_required
+def fin_pedido():
+    resp = make_response(redirect(url_for('inicio')))
     resp.set_cookie(str(current_user.id),"",expires=0)
     return resp
 
